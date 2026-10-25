@@ -80,7 +80,8 @@ refit at c + d + {24, 72, 240} on a window that **starts at the break** (`BreakR
 | known breaks, plan remedy | 1.3685 | 2.2602 | 0.2% | 3.7 |
 | known breaks + window reset | 0.9489 | 1.9356 | 0.5% | 10.2 |
 | **known breaks + window reset + weekly** | **0.8789** | 1.4617 | 1.1% | **22.2** |
-| CUSUM + window reset at its change-time estimate | 1.0263 | 1.1384 | 3.9% | 80.8 |
+| CUSUM on closed errors (`err_lag = 48`) | 0.9179 | 0.2549 | 4.4% | 90.1 |
+| CUSUM on closed errors + window reset at its change-time estimate | 1.0445 | 1.1742 | 4.2% | 86.0 |
 
 Over five seeds (44 to 48), paired per seed: window reset alone beats weekly on 4/5 seeds (mean -0.0103, range
 -0.0340 to +0.0152, so a tie); **window reset + weekly beats continuous retraining on 5/5 seeds (mean -0.0105)
@@ -90,10 +91,15 @@ So the right reading is not "drift detection answers the wrong question". It is:
 two decisions. A break detector paired with a fixed-window refit wastes the detection, and a break detector alone
 misses the gradual drift. Detection plus a break-aware window plus a slow cron dominates.**
 
-Limit, measured: the realistic version (CUSUM, window restarted at the CUSUM change-time estimate) is *worse* than
-plain CUSUM (1.0263 against 0.9189, churn x6), because false alarms truncate the window to a few noisy cycles.
-The value of a window reset depends on detection precision. I did not tune it further (minimum window length,
-threshold), to avoid choosing the variant after seeing the result.
+Limit, measured: the realistic version (CUSUM on closed errors, window restarted at the CUSUM change-time
+estimate) is *worse* than the same CUSUM without reset (1.0445 against 0.9179, churn x7: 0.0223 against 0.0031),
+because false alarms truncate the window to a few noisy cycles. The value of a window reset depends on detection
+precision. I did not tune it further (minimum window length, threshold), to avoid choosing the variant after
+seeing the result. (With the plan's unclosed errors the reset never applies: the change estimate always falls
+after the newest closed point, and the policy is identical to plain CUSUM, 0.9189.)
+
+Over seeds, the CUSUM rows are paired against weekly and continuous in the CLI output (D5); the reset variant
+there uses the plan's `err_lag = 0` and therefore equals plain CUSUM.
 
 ### 2. CUSUM's "3.4x better targeting" is half a leak
 

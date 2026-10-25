@@ -120,10 +120,14 @@ class CusumReset(Cusum):
         self.change = np.where(fire_p, self.zero_p + 1, np.where(fire_m, self.zero_m + 1, self.change))
         fire = fire_p | fire_m
         self.sp, self.sm = np.where(fire, 0.0, sp), np.where(fire, 0.0, sm)
+        # a later fire must not reuse a change time from before this one
+        self.zero_p = np.where(fire, tc, self.zero_p)
+        self.zero_m = np.where(fire, tc, self.zero_m)
         return fire
 
     def window_start(self, t_end: int) -> np.ndarray:
-        return np.minimum(self.change, t_end)
+        # an estimated change after the newest closed point cannot be used yet: keep the full window (0 = no cut)
+        return np.where(self.change <= t_end, self.change, 0)
 
 
 @dataclass
