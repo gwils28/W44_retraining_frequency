@@ -62,8 +62,9 @@ is a trend term or a weighting, not a tighter cron.
 1. **The "constant churn floor, no lever left" holds only for k much smaller than w.** The plan states that in the
    drift regime churn per step tends to `sqrt(2/pi) sqrt(q/w)` = 0.003257, a constant. Exactly, for `k <= w`,
    `Var(R) ~ q k^2 (w - k/3) / w^2`: the floor is reached only when `k << w`, and at `k = w` churn is
-   `sqrt(2/3)` = 0.82 of it (0.002677). For `k > w` it keeps falling as `sqrt(q/k)` (0.001776 at k = 720, the
-   plan's own printout, below its "floor"). Cadence stays a lever for churn; it is a weak one (x0.47 from k = 1 to
+   `sqrt(2/3)` = 0.82 of it (drift part exactly 0.002660; 0.002677 with the noise part). For `k > w`,
+   `Var(R) ~ q (k - w/3)` and churn keeps falling, towards `sqrt(2/pi) sqrt(q/k)` when `k >> w` (0.001776 at
+   k = 720, the plan's own printout, below its "floor"). Cadence stays a lever for churn; it is a weak one (x0.47 from k = 1 to
    k = 240).
 2. **The 67.6% noise share belongs to w = 240, which is nine times w\*.** On the same process with the window at
    its optimum, the noise share at k = 1 is 94.3% (the `w` free table in the CLI output). The shorter the window,
