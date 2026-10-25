@@ -55,7 +55,7 @@ serving:
   park_size: 20000
   compute_window_minutes: 30
   provisioned_workers: 2
-  cache_key: [series_id, as_of, horizon, tau, model_version, feature_version]
+  cache_key: [series_id, as_of, horizon, tau, model_version, feature_version, training_asof]
   ttl_ms_by_horizon: {"1": 300000, "24": 3600000}
 measured:                               # filled from the backtest of the candidate (block 5, real data, k = 24)
   jump_p95_at_tau_095: 0.540
