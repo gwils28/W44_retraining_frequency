@@ -46,3 +46,8 @@ def test_closed_forms_within_three_monte_carlo_standard_errors(k, w):
     mse, var_r = sims[:, 0], sims[:, 1]
     assert abs(F.mse_closed(k, w, SIG, Q) - mse.mean()) < 3 * mse.std(ddof=1) / np.sqrt(5) + 0.01 * mse.mean()
     assert abs(F.var_revision(k, w, SIG, Q) - var_r.mean()) < 3 * var_r.std(ddof=1) / np.sqrt(5) + 0.01 * var_r.mean()
+
+
+def test_mse_parts_add_up_to_the_closed_form():
+    for k, w in ((1, 20), (24, 240), (168, 27)):
+        assert sum(F.mse_parts(k, w, SIG, Q).values()) == pytest.approx(F.mse_closed(k, w, SIG, Q))

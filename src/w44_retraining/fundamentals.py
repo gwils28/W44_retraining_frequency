@@ -29,6 +29,12 @@ def mse_closed(k: int, w: int, sigma: float, q: float) -> float:
     return sigma**2 * (1 + 1 / w) + q * ((a_bar + 1) + centroid_lag_var(w))
 
 
+def mse_parts(k: int, w: int, sigma: float, q: float) -> dict[str, float]:
+    """The four additive terms of MSE(k, w): target noise, estimation noise, centroid lag, model age."""
+    return dict(noise=sigma**2, estimation=sigma**2 / w, centroid_lag=q * centroid_lag_var(w),
+                age=q * ((k - 1) / 2.0 + 1))
+
+
 def w_star(sigma: float, q: float) -> float:
     return float(np.sqrt(3.0 * (sigma**2 + q / 6.0) / q))
 

@@ -7,6 +7,18 @@ uv run w44 churn            # under 1 s
 Code: `src/w44_retraining/fundamentals.py`. Tests: `tests/unit/test_fundamentals.py` (closed forms against Monte
 Carlo within three standard errors, vectorised simulation equal to the plan's loop).
 
+## Notebooks
+
+- [`notebooks/01_closed_forms.ipynb`](notebooks/01_closed_forms.ipynb): the local level model built from scratch,
+  the four error terms, the best window, Monte Carlo validation with error bars, the jitter/drift split of a
+  revision, churn regimes, the cost trade-off and the trend counter-example.
+
+![A window mean lags the level by (w - 1)/2](figures/centroid_lag.svg)
+
+![Noise share of published revisions against the cadence](figures/noise_share.svg)
+
+![Churn per step against the cadence: no hard floor](figures/churn_regimes.svg)
+
 ## The model
 
 `y_t = L_t + e_t`, with a random-walk level (increments `u ~ N(0, q)`) and noise `e ~ N(0, sigma^2)`. The service
@@ -67,7 +79,8 @@ is a trend term or a weighting, not a tighter cron.
    k = 720, the plan's own printout, below its "floor"). Cadence stays a lever for churn; it is a weak one (x0.47 from k = 1 to
    k = 240).
 2. **The 67.6% noise share belongs to w = 240, which is nine times w\*.** On the same process with the window at
-   its optimum, the noise share at k = 1 is 94.3% (the `w` free table in the CLI output). The shorter the window,
+   its optimum, the noise share at k = 1 is 94.9% at w\* = 27 (94.3% at w = 30, the optimum of the CLI's `w` free
+   grid, which steps by 5). The shorter the window,
    the more of what is republished is noise. That strengthens the plan's point, but the figure to quote depends on
    the window, and the plan quotes one without saying so.
 3. **"Window and cadence are independent" is a property of this model.** It follows from the additive MSE of a
