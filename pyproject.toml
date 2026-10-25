@@ -1,0 +1,40 @@
+[project]
+name = "w44-retraining"
+version = "0.1.0"
+description = "W44 study: retraining cadence as a decision, forecast serving as a system of contracts"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "numpy>=2.5,<2.6",
+    "scipy>=1.18,<1.19",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+w44 = "w44_retraining.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+notebooks = ["jupyter", "nbconvert", "matplotlib>=3.10", "ipykernel"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/w44_retraining"]
+
+[tool.uv]
+default-groups = ["dev", "notebooks"]
+
+[tool.ruff]
+line-length = 110
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E741"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: integration tests that run full benches (seconds to minutes)"]

@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+.ipynb_checkpoints/
+
+# local instructions for Claude Code, not versioned
+CLAUDE.md
+
+# downloaded datasets and intermediate results (regenerable: `w44 real download|run`)
+data/
