@@ -29,7 +29,7 @@ def setup() -> None:
     """Matplotlib theme: recessive axes and grid, neutral ink for text."""
     mpl.rcParams.update({
         "figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "savefig.facecolor": SURFACE,
-        "figure.dpi": 110, "font.size": 10, "axes.titlesize": 11, "axes.titleweight": "semibold",
+        "figure.dpi": 110, "font.size": 10, "axes.titlesize": 11, "axes.titleweight": "bold",
         "axes.titlelocation": "left", "axes.edgecolor": GRID, "axes.labelcolor": TEXT_2,
         "axes.spines.top": False, "axes.spines.right": False, "axes.grid": True,
         "grid.color": GRID, "grid.linewidth": 0.8, "xtick.color": TEXT_2, "ytick.color": TEXT_2,
