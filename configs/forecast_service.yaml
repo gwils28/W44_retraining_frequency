@@ -20,8 +20,9 @@ data:
   fail_if_window_not_closed: true
 freshness:
   # max model age per served quantile = k_max measured against the CLOSED naive. Block 5 (real data, gaussian
-  # quantiles): full year 336 / 336 / 168, used as is (margins are a human decision). Worst quarter (Q2 2014): 336 / 168 / 0,
-  # i.e. at tau 0.95 no cadence beat the closed naive for three months: hence on_budget_exceeded below.
+  # quantiles): full year 720 / 720 / 168, but 336 / 336 / 168 with the refit calendar shifted by 240 h: the
+  # contract takes the lower of the two (margins beyond that are a human decision). Worst quarter (Q2 2014):
+  # at tau 0.95 no cadence beat the closed naive for three months: hence on_budget_exceeded below.
   # The plan's 168 / 120 / 24 came from an unclosed baseline and under-covered tails.
   budget_by_tau:
     "0.50": {max_model_age_steps: 336}
@@ -35,7 +36,7 @@ stability:                              # sign ONE of the two clauses; they pull
   jump_p95_max: 0.10
   visible_revision_threshold: 0.01
   max_pct_origins_visible: 0.15
-  depends_on_quantile_method: true      # conformal: jump p95 6-10% on real data (10.1% at k = 24), 30-59% of origins revise
+  depends_on_quantile_method: true      # conformal: jump p95 5.6-9.8% on real data, but 30-59% of origins revise
 retraining:
   cadence_steps: 24
   trigger: cusum_on_closed_error

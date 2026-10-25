@@ -84,44 +84,55 @@ by its lag-24 MAE.
 | seasonal naive lag 72 (closed) | 0.6410 | 0.5303 | 0.2343 | 0.938 |
 | seasonal naive lag 168 (closed, weekly) | 0.5586 | 0.4654 | 0.2190 | 0.932 |
 | model, gaussian, k = 1 | 0.5461 | 0.4289 | 0.2054 | 0.909 |
-| model, gaussian, k = 168 | 0.5708 | 0.4479 | 0.2184 | 0.905 |
-| model, gaussian, k = 720 | 0.6571 | 0.5349 | 0.2881 | 0.869 |
-| model, conformal, k = 1 | 0.5933 | 0.4711 | 0.2178 | 0.910 |
-| model, conformal, k = 720 | 0.6268 | 0.4911 | 0.2204 | 0.914 |
+| model, gaussian, k = 168 | 0.5755 | 0.4603 | 0.2331 | 0.894 |
+| model, gaussian, k = 720 | 0.6294 | 0.4900 | 0.2442 | 0.895 |
+| model, conformal, k = 1 | 0.5932 | 0.4713 | 0.2175 | 0.909 |
+| model, conformal, k = 720 | 0.6334 | 0.4877 | 0.2208 | 0.909 |
+
+The model is served from 240 origins before the evaluation, which only collect closed errors for the conformal
+quantiles (the protocol's warm-up) and are not scored.
 
 `k_max` (full year; then four consecutive quarters of 2,190 origins):
 
 | quantiles | baseline | full year (0.50 / 0.80 / 0.95) | quarters |
 |---|---|---|---|
-| gaussian | naive (plan) | 0 / 0 / 0 | Q1 0/336/336, Q2 0/0/0, Q3 0/0/0, Q4 0/168/168 |
-| gaussian | closed naive | 336 / 336 / 168 | Q1 720/720/720, Q2 336/168/0, Q3 720/336/168, Q4 336/720/720 |
-| conformal | naive (plan) | 0 / 0 / 0 | Q1 0/720/720, Q2 0/0/0, Q3 0/0/0, Q4 0/0/24 |
-| conformal | closed naive | 720 / 720 / 720 | Q1 720 x3, Q2 0 x3, Q3 720 x3, Q4 720 x3 |
+| gaussian | naive (plan) | 0 / 0 / 0 | Q1 0/336/168, Q2 0/0/0, Q3 0/0/0, Q4 0/168/72 |
+| gaussian | closed naive | 720 / 720 / 168 | Q1 720/720/720, Q2 720/720/0, Q3 720/720/72, Q4 336/720/336 |
+| conformal | naive (plan) | 0 / 0 / 0 | Q1 0/720/720, Q2 0/0/0, Q3 0/0/0, Q4 0/0/336 |
+| conformal | closed naive | 720 / 720 / 720 | Q1 720 x3, Q2 0 x3, Q3 720 x3, Q4 336/720/720 |
 
-**Verdict under the protocol's decision rule** (conformal quantiles): against the closed naive, the ratio
-`k_max(0.50) / k_max(0.95)` is 1.0 on the full year and in three quarters out of four: **CONTRADICTED**. Against
-the plan's naive it is undefined (the model never wins at any cadence): neither threshold applies.
+**Verdict.** The protocol's decision rule, applied as written (conformal quantiles, `k_max` against
+`seasonal_naive_24`), gives **NEITHER**: the ratio is undefined because the model never beats that baseline at the
+median, at any cadence, in any quarter. The closed lag-72 naive is **a deviation from the protocol**, added after
+it was written because block 5 found the lag-24 naive reads unclosed actuals. Against it, the same rule gives a
+ratio of 1.0 on the full year (and 1.0, undefined, 1.0, 0.5 by quarter): **CONTRADICTED**. I report both; only
+the first is the pre-registered verdict.
 
 What the real data says:
 
 1. **Against a baseline that reads the freshest actuals, no cadence wins.** On electricity load, the lag-24 naive
-   is so strong that 48 hours of extra freshness beat any retraining of a 24-hour-profile model, at every
-   quantile. A backtest that forgets the closing lag *for the baseline* concludes the model is useless; one that
-   forgets it for the model concludes it is better than it is (+12.8% at tau = 0.95, k = 24, as on the DGP).
-2. **Against the fair baseline, the freshness budget barely depends on the quantile.** Conformal: 720 h at every
-   quantile. Gaussian: 336 h at the median, 168 h at tau = 0.95, the same factor 2 as the corrected DGP. Neither
-   comes close to 7.
-3. **Quarter 2 breaks everything.** From about April to June 2014, the model loses to the closed naive at every cadence with
-   conformal quantiles. Any single-period `k_max` is a fragile number; the contract should carry the quarterly
-   range, not a point.
+   is so strong that 48 hours of extra freshness beat any retraining of a 24-hour-profile model, at the median and
+   on most of the year. A backtest that forgets the closing lag *for the baseline* concludes the model is useless;
+   one that forgets it for the model concludes it is better than it is (+12.8% at tau = 0.95, k = 24).
+2. **Against the fair baseline, the quantile dependence is weak with calibrated quantiles and unstable without.**
+   Conformal: 720 h at every quantile. Gaussian: 720 h at the median and 168 h at tau = 0.95 (ratio 4.3), but a
+   first run whose refits were simply phased differently (the schedule started 240 h later) gave 336 / 336 / 168
+   (ratio 2). A `k_max` that moves by a factor 2 when the refit calendar is shifted is not a contract number.
+3. **Quarter 2 breaks everything.** From about April to June 2014, the model loses to the closed naive at every
+   cadence with conformal quantiles, and at tau = 0.95 with gaussian ones. The contract should carry the
+   quarterly range and a fallback, not a point.
 4. **The weekly cycle is missing from the model.** The closed weekly naive (0.5586 at the median) almost matches the
    model at k = 1 (0.5461). A profile at m = 24 cannot see weekends; on this data, the model class is a bigger lever
    than the cadence.
-5. **Neither quantile method is calibrated** (0.91 coverage for a 0.95 quantile). Conformal on closed errors fixes
-   the drift of coverage with model age (0.914 at k = 720 against 0.869), not its level.
+5. **Neither quantile method is calibrated** (about 0.91 coverage for a 0.95 quantile at every cadence). Conformal
+   on closed errors keeps coverage flat with model age (0.909 at k = 1 and at k = 720, against 0.909 to 0.895 for
+   gaussian), not at its nominal level: errors are not exchangeable over a year of load data.
+6. **Stability at tau = 0.95.** Gaussian: jump p95 from 4.6% (k = 1) to 54% (k = 24) and more than 100% beyond;
+   conformal: 5.6% to 9.8% at every cadence, but 30% to 59% of origins carry a visible revision.
 
 ## Definition of done
 
 - [x] The plan's DGP figures reproduce to the printed digit (integration test).
 - [x] Each correction is measured, with seeds (DGP) or quarters (real data).
-- [x] Real data run under a protocol committed before the results, with its decision rule applied as written.
+- [x] Real data run under a protocol committed before the results; its decision rule applied as written (NEITHER),
+      and the closed-baseline variant reported separately as a deviation.

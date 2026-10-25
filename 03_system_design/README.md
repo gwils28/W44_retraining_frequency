@@ -96,10 +96,11 @@ and the gate makes it explicit.
 ## What I correct relative to the plan
 
 1. **`freshness.budget_by_tau`**: the plan's 168 / 120 / 24 (a factor 7) came from a baseline reading unclosed
-   actuals and from under-covered tails (block 5). Measured against the closed naive on real data: 336 / 336 / 168,
-   a factor 2. The point that a scalar freshness SLA is a type error survives, much weakened; the stronger point is
-   that the budget must be measured per park and per period (Q2 2014: no cadence beats the closed naive at
-   tau = 0.95).
+   actuals and from under-covered tails (block 5). Measured against the closed naive on real data with gaussian
+   quantiles: 720 / 720 / 168, or 336 / 336 / 168 with the refit calendar shifted by 240 h; the contract takes
+   the lower. With calibrated (conformal) quantiles the budget does not depend on the quantile at all. The point
+   that a scalar freshness SLA is a type error is much weakened; the stronger point is that the budget must be
+   measured per park and per period (Q2 2014: no cadence beats the closed naive at tau = 0.95).
 2. **G6 now covers the baseline and the trigger**, not only the backtest: the plan's own baseline and CUSUM read
    data that the closing lag forbids (blocks 2 and 5).
 3. **Trade-off 2** was "CUSUM because 40.9% of its refits are near a break". With closed errors that share is 20.0%,

@@ -131,7 +131,9 @@ def study(cfg: dict | None = None) -> dict:
     out["model"], out["stability"], out["refits"] = {}, {}, {}
     for method in ("gaussian", "conformal"):
         for k in ks:
-            r = serve_quantiles(y, k, **common, fit_lag=d, method=method)
+            # conformal warm-up as in the protocol: 240 origins before the evaluation collect closed errors
+            r = serve_quantiles(y, k, start=start - 240, stop=stop, w=w, m=m, h=h, fit_lag=d, method=method,
+                                score_from=start)
             out["model"][method, k] = summarise(r)
             out["stability"][method, k] = stability(r["rev"][0.95], scale)
             out["refits"][k] = r["n_refit"]
@@ -146,31 +148,39 @@ def study(cfg: dict | None = None) -> dict:
     out["illusion"] = {}
     for method in ("gaussian", "conformal"):
         for k in (24, 168):
-            leak = serve_quantiles(y, k, **common, fit_lag=0, method=method)
+            leak = serve_quantiles(y, k, start=start - 240, stop=stop, w=w, m=m, h=h, fit_lag=0, method=method,
+                                   score_from=start)
             real = out["model"][method, k]["full"][0.95]
             lk = float((leak["loss"][0.95] / scale).mean())
             out["illusion"][method, k] = (real, lk, (real - lk) / lk)
     return out
 
 
+def ratio(v: dict) -> float:
+    """k_max(0.50) / k_max(0.95); nan when the model never wins at the median (0/0 or 0/x is not a ratio)."""
+    if v[0.5] == 0:
+        return float("nan")
+    return v[0.5] / v[0.95] if v[0.95] else float("inf")
+
+
 def verdict(out: dict) -> str:
-    """Apply the protocol's decision rule (conformal quantiles), against both baselines."""
+    """The protocol's decision rule (conformal quantiles). As written it uses seasonal_naive_24; the closed
+    lag-72 naive was added AFTER the protocol (block 5 finding) and is reported as a deviation."""
     lines = []
-    for bn in ("snaive", "snaive_closed"):
+    for bn, label in (("snaive", "as written (seasonal_naive_24)"),
+                      ("snaive_closed", "DEVIATION: closed naive lag 72, added after the protocol")):
         km = out["k_max"]["conformal", bn]
-
-        def ratio(v):
-            return v[0.5] / v[0.95] if v[0.95] else float("inf")
-
         r_full = ratio(km["full"])
         r_q = [ratio(q) for q in km["quarters"]]
-        if r_full >= 4 and sum(r >= 4 for r in r_q) >= 3:
+        if np.isnan(r_full):
+            v = "NEITHER (undefined: the model never beats the baseline at the median)"
+        elif r_full >= 4 and sum(r >= 4 for r in r_q if not np.isnan(r)) >= 3:
             v = "SUPPORTED"
         elif r_full <= 1:
             v = "CONTRADICTED"
         else:
             v = "NEITHER (between the two thresholds)"
-        lines.append(f"   vs {bn}: ratio full year {r_full:.1f}, quarters {[round(r, 1) for r in r_q]} -> {v}")
+        lines.append(f"   {label}: ratio full year {r_full:.1f}, quarters {[round(r, 1) for r in r_q]} -> {v}")
     return "\n".join(lines)
 
 

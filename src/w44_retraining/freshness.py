@@ -28,9 +28,11 @@ TAUS = (0.50, 0.80, 0.95)
 def serve_quantiles(
     y: np.ndarray, k: int, *, start: int, stop: int, w: int = 240, m: int = 24, h: int = 24, fit_lag: int = 48,
     taus=TAUS, method: str = "gaussian", buf: int = 240, recal: int = 24, min_closed: int = 48,
+    score_from: int | None = None,
 ) -> dict:
     """Serve quantile forecasts at origins start .. stop - h - 1, refit every k steps.
 
+    score_from: origins before it only collect closed errors and refit (conformal warm-up); they are not scored.
     Returns per tau: `loss` (n,) mean pinball per series (`loss_by_origin` (origins, n) before averaging),
     `cov` (n,) coverage, `rev` (origins, n) mean absolute
     revision of the shared targets between consecutive origins; plus `n_refit`.
@@ -46,7 +48,9 @@ def serve_quantiles(
     closed: deque = deque(maxlen=buf)
     offset = None
     n_refit = cnt = 0
+    score_from = start if score_from is None else score_from
     for t0 in range(start, stop - h):
+        scored = t0 >= score_from
         ph = np.arange(t0 + 1, t0 + h + 1) % m
         base = mu[:, None] + prof[:, ph]
         act = y[:, t0 + 1 : t0 + h + 1]
@@ -61,6 +65,8 @@ def serve_quantiles(
                 q = base + offset[tau]
             else:
                 q = base + z[tau] * sd[:, None]
+            if not scored:
+                continue
             loss[tau].append(pinball(act, q, tau).mean(axis=1))
             cov[tau] += (act <= q).mean(axis=1)
             if prev[tau] is not None:
@@ -68,7 +74,7 @@ def serve_quantiles(
             prev[tau] = q
         if method == "conformal":
             errors.append((t0 + h, act - base))
-        cnt += 1
+        cnt += scored
         if t0 > start and (t0 - start) % k == 0:
             mu, prof, sd = fit_window(y, t0 - fit_lag, w, m)
             n_refit += 1
