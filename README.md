@@ -40,13 +40,30 @@ V2 has no time field.
 | 7 Tech stack | [`07_tech_stack`](07_tech_stack/README.md) | | mlserver / bentoml / kserve sheet, install behaviour, gateway cache key |
 | 8 Causal inference | [`08_causal_inference`](08_causal_inference/README.md) | `w44 causal` | placebo, A/B, holdout sizing, RDD at the trigger threshold |
 
+## Notebooks
+
+Study material, written to understand the topic rather than to show results: each one builds the intuition, runs
+the experiment from the package, and reads the result, with fixed callouts (**Intuition**, **Example**, **Watch
+out**, **Takeaway**). They are committed executed, and export the figures of each block's `figures/` folder.
+
+| Block | Notebook | What it explains |
+|---|---|---|
+| 2 | [`01_the_bench`](02_retrain_policy_harness/notebooks/01_the_bench.ipynb) | the two drifts, the closing lag on a timeline, every metric, the amplitude vs frequency trade-off |
+| 2 | [`02_the_perfect_detector`](02_retrain_policy_harness/notebooks/02_the_perfect_detector.ipynb) | why a perfect detector loses, and the remedy that makes it win |
+| 4 | [`01_closed_forms`](04_fundamentals/notebooks/01_closed_forms.ipynb) | accuracy and stability of a window mean, derived step by step and checked by Monte Carlo |
+| 5 | [`01_quantiles_and_freshness`](05_mini_project/notebooks/01_quantiles_and_freshness.ipynb) | pinball loss, coverage, why the factor 7 is two artefacts |
+| 5 | [`02_real_data`](05_mini_project/notebooks/02_real_data.ipynb) | Monash electricity under a pre-registered protocol |
+| 6 | [`01_serving_cost`](06_tsfm_serving/notebooks/01_serving_cost.ipynb) | consumed vs provisioned CPU, break-even, the licence gate |
+| 8 | [`01_regression_to_the_mean`](08_causal_inference/notebooks/01_regression_to_the_mean.ipynb) | the fake improvement, placebo, holdout, RDD at the threshold |
+
 ## Reproduce
 
 ```bash
 uv sync                      # Python 3.13, versions pinned in uv.lock
-uv run pytest                # 49 tests, a few seconds (integration tests marked `slow`)
+uv run pytest                # 55 tests, a few seconds (integration tests marked `slow`)
 uv run ruff check src tests
 make harness gate churn freshness real serving causal   # every table of the READMEs
+make notebooks               # re-execute the notebooks in place (run `make real` first: block 5 reads its cache)
 ```
 
 Seeds are fixed in the code (44 for block 2, 544 for block 5, 844 for block 8, plus the seed ranges listed in each
