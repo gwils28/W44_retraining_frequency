@@ -32,3 +32,11 @@ def test_block5_dgp_figures():
     assert [round(float(r["loss"][t].mean()), 4) for t in (0.5, 0.8, 0.95)] == [0.2579, 0.1857, 0.0757]
     b = seasonal_naive(y, start=312, stop=y.shape[1])
     assert [round(float(b["loss"][t].mean()), 4) for t in (0.5, 0.8, 0.95)] == [0.2880, 0.2032, 0.0758]
+
+
+def test_block8_figures():
+    from w44_retraining import causal as C
+
+    assert round(C.truth(0.30), 4) == -0.1053
+    assert round(C.est_naive(C.simulate()), 4) == -0.3119
+    assert round(C.est_naive(C.simulate(placebo=True)), 4) == -0.2072
