@@ -28,12 +28,12 @@ packages = ["src/w44_retraining"]
 default-groups = ["dev", "notebooks"]
 
 [tool.ruff]
-line-length = 110
+line-length = 120
 src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP"]
-ignore = ["E741"]
+ignore = ["E741", "B008"]  # B008: defaults are frozen dataclasses (immutable)
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
