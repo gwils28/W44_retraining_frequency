@@ -21,3 +21,14 @@ def test_block2_table(policy, mase, jump_p95, n_refit):
     assert round(r["mase"], 4) == mase
     assert round(r["jump_p95"], 4) == jump_p95
     assert round(r["n_refit"], 1) == n_refit
+
+
+def test_block5_dgp_figures():
+    from w44_retraining.freshness import seasonal_naive, serve_quantiles
+    from w44_retraining.park import ParkSpec
+
+    y = make_park(ParkSpec(n=200, seed=544)).y
+    r = serve_quantiles(y, 24, start=312, stop=y.shape[1])
+    assert [round(float(r["loss"][t].mean()), 4) for t in (0.5, 0.8, 0.95)] == [0.2579, 0.1857, 0.0757]
+    b = seasonal_naive(y, start=312, stop=y.shape[1])
+    assert [round(float(b["loss"][t].mean()), 4) for t in (0.5, 0.8, 0.95)] == [0.2880, 0.2032, 0.0758]
