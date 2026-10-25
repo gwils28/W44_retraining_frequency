@@ -1,0 +1,66 @@
+# Forecast service contract (block 3). Checked by `uv run w44 gate` (src/w44_retraining/gate.py): deterministic,
+# no model call. Numbers come from blocks 2, 5, 6 and 8 of this repo, not from the plan where they differ.
+version: 2
+asof: 2026-10-25
+service:
+  name: forecast-park-hourly
+  protocol: open-inference-protocol/v2
+  # OIP V2 has NO time field (checked field by field, 2026-10-25): request {id, parameters, inputs, outputs},
+  # response {model_name, model_version, id, parameters, outputs}; "Currently no parameters are defined".
+  # Everything below lives in the gateway, not in the protocol.
+  protocol_cannot_express: [as_of, horizon, quantile_levels, training_asof, feature_version, cache_ttl]
+  gateway_adds: [as_of, horizon, tau, training_asof, model_version, feature_version]
+client:
+  monthly_revenue_usd: 5.0e+6           # needed by the weights-licence gate (Timestral has a revenue cap)
+data:
+  closing_lag_steps: 48                 # d, measured
+  backtest_must_use_same_lag: true      # +6.3% MASE illusion otherwise (block 2), +12.8% at tau 0.95 (block 5, real)
+  baseline_must_use_closed_data: true   # a lag-24 naive under d = 48 reads 48 h the model cannot (block 5)
+  trigger_must_use_closed_errors: true  # CUSUM targeting falls from 40.9% to 20.0% once errors are closed (block 2)
+  fail_if_window_not_closed: true
+freshness:
+  # max model age per served quantile = k_max measured against the CLOSED naive. Block 5 (real data, gaussian
+  # quantiles): full year 336 / 336 / 168, used as is (margins are a human decision). Worst quarter (Q2 2014): 336 / 168 / 0,
+  # i.e. at tau 0.95 no cadence beat the closed naive for three months: hence on_budget_exceeded below.
+  # The plan's 168 / 120 / 24 came from an unclosed baseline and under-covered tails.
+  budget_by_tau:
+    "0.50": {max_model_age_steps: 336}
+    "0.80": {max_model_age_steps: 336}
+    "0.95": {max_model_age_steps: 168}
+  measured_on: "Monash Electricity Hourly 2014, gaussian quantiles, closed naive; re-measure per client park"
+  on_budget_exceeded: refuse_and_fallback_to_closed_seasonal_naive
+stability:                              # sign ONE of the two clauses; they pull in opposite directions
+  metric: relative_revision_vs_lag24_scale
+  clause: jump_p95_max                  # or: max_pct_origins_visible
+  jump_p95_max: 0.10
+  visible_revision_threshold: 0.01
+  max_pct_origins_visible: 0.15
+  depends_on_quantile_method: true      # conformal: all cadences meet jump p95 <= 10% but 30-59% of origins revise
+retraining:
+  cadence_steps: 24
+  trigger: cusum_on_closed_error
+  remediation: window_reset_on_confirmed_break   # detection and remediation are two decisions (block 2)
+  forbid_drift_recall_as_kpi: true      # a perfect detector: 100% "useful" refits, MASE 1.3685 vs 0.9829 weekly
+  window_length_is_not_cadence: true    # window bias and model age are additive terms (block 4)
+  effect_measurement:                   # at least one of the two (block 8)
+    holdout: {permanent: true, fraction: 0.05}   # A/B on the average effect; costs 0.0012 per park series
+    rdd_logging: true                   # log the trigger's running variable: effect at the threshold, for free
+quantiles:
+  method: gaussian_insample
+  measured_coverage: {"0.95": 0.909}    # block 5, real data, k = 1: not calibrated, declared as such
+serving:
+  model_family: Timestral
+  model_id: mistralai/Timestral-28M
+  latency_ms: 28                        # derived from published figures, not measured on this park
+  park_size: 20000
+  compute_window_minutes: 30
+  provisioned_workers: 2
+  cache_key: [series_id, as_of, horizon, tau, model_version, feature_version]
+  ttl_ms_by_horizon: {"1": 300000, "24": 3600000}
+measured:                               # filled from the backtest of the candidate (block 5, real data, k = 24)
+  jump_p95_at_tau_095: 0.540
+  pct_origins_visible_at_tau_095: 0.042
+versioning:
+  pinned_together: [model_id, feature_version, training_asof, window_length, cadence, guardrail_set_sha]
+  results_incomparable_across: [closing_lag_steps, mase_scale_definition, baseline_lag, quantile_method]
+fail_mode: fail_closed

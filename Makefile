@@ -1,4 +1,4 @@
-.PHONY: install test test-fast lint harness churn freshness real serving causal
+.PHONY: install test test-fast lint harness gate churn freshness real serving causal
 
 install:        ## create .venv and install the project + dev/notebooks groups (uv.lock)
 	uv sync
@@ -14,6 +14,9 @@ lint:
 
 harness:        ## block 2: retraining-policy bench
 	uv run w44 harness
+
+gate:           ## block 3: check the service contract (exit 1 when blocked)
+	uv run w44 gate
 
 churn:          ## block 4: stability in closed form
 	uv run w44 churn
