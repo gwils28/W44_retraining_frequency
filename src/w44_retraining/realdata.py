@@ -225,3 +225,40 @@ def study_cached(refresh: bool = False) -> dict:
     RESULTS.parent.mkdir(parents=True, exist_ok=True)
     RESULTS.write_bytes(pickle.dumps(out))
     return out
+
+
+def gaussian_kmax_at_phase(y: np.ndarray, cfg: dict, warmup: int) -> dict:
+    """k_max of gaussian quantiles against the closed naive, with the refit calendar started `warmup` origins
+    before the evaluation (the study uses 240; 0 starts it with the evaluation). Nothing but the refit calendar
+    changes (gaussian quantiles use no past errors). Returns {"loss": {k: {tau: ...}}, "k_max": {tau: k}}."""
+    mod, span = cfg["model"], cfg["span"]
+    w, m, h, d = mod["window_w"], mod["season_m"], mod["horizon_h"], mod["closing_lag_d"]
+    start = span["history_before_evaluation"]
+    ev = y[:, start:]
+    scale = np.abs(ev[:, m:] - ev[:, :-m]).mean(axis=1)
+    base = seasonal_naive(y, start=start, stop=y.shape[1], w=w, m=m, h=h, lag=closed_lag(m, h, d))
+    base_full = {t: float((base["loss"][t] / scale).mean()) for t in TAUS}
+    loss = {}
+    for k in cfg["cadences_k"]:
+        r = serve_quantiles(y, k, start=start - warmup, stop=y.shape[1], w=w, m=m, h=h, fit_lag=d,
+                            method="gaussian", score_from=start)
+        loss[k] = {t: float((r["loss"][t] / scale).mean()) for t in TAUS}
+    return dict(loss=loss, k_max={t: k_max(loss, base_full, t, cfg["cadences_k"]) for t in TAUS})
+
+
+def weekly_profile(y: np.ndarray, report: dict, cfg: dict, weeks: int = 52) -> np.ndarray:
+    """Mean load per hour of the week over the evaluation span, divided by each series' mean, (n, 168).
+
+    Column 0 is Sunday 00:00: the file starts on Sunday 1 January 2012 at 00:00, so the hour of the week of a
+    file index is that index modulo 168."""
+    start = cfg["span"]["history_before_evaluation"]
+    phase = (report["T_file"] - report["T_kept"] + start) % 168
+    ev = y[:, start : start + weeks * 168]
+    week = ev.reshape(ev.shape[0], weeks, 168).mean(axis=1) / ev.mean(axis=1, keepdims=True)
+    return np.roll(week, phase, axis=1)
+
+
+def weekend_ratio(week: np.ndarray) -> np.ndarray:
+    """Per series: mean weekend load (Sat, Sun) / mean weekday load (Mon to Fri), from `weekly_profile`."""
+    weekend = np.concatenate([week[:, :24], week[:, 144:]], axis=1).mean(axis=1)
+    return weekend / week[:, 24:144].mean(axis=1)

@@ -121,14 +121,33 @@ What the real data says:
 3. **Quarter 2 breaks everything.** From about April to June 2014, the model loses to the closed naive at every
    cadence with conformal quantiles, and at tau = 0.95 with gaussian ones. The contract should carry the
    quarterly range and a fallback, not a point.
-4. **The weekly cycle is missing from the model.** The closed weekly naive (0.5586 at the median) almost matches the
-   model at k = 1 (0.5461). A profile at m = 24 cannot see weekends; on this data, the model class is a bigger lever
-   than the cadence.
+4. **A weekly cycle matters for a sixth of the series, not for the median one.** The average week of the median
+   series is flat (weekend load 1% from weekday load), but 52 series (17%) have weekends at least 10% lower and 11
+   (4%) at least 10% higher. Those series carry the edge of the closed weekly naive (0.5586 at the median) over the
+   lag-72 naive (0.6410): its pinball is 45% lower on the first group and 4% lower on flat-week series
+   (correlation -0.64 between weekend ratio and gain). The model, with a 24-hour profile, shares the lag-72 naive's
+   blind spot on that minority; a weekly profile for them is likely a bigger lever than the cadence.
 5. **Neither quantile method is calibrated** (about 0.91 coverage for a 0.95 quantile at every cadence). Conformal
    on closed errors keeps coverage flat with model age (0.909 at k = 1 and at k = 720, against 0.909 to 0.895 for
    gaussian), not at its nominal level: errors are not exchangeable over a year of load data.
 6. **Stability at tau = 0.95.** Gaussian: jump p95 from 4.6% (k = 1) to 54% (k = 24) and more than 100% beyond;
    conformal: 5.6% to 9.8% at every cadence, but 30% to 59% of origins carry a visible revision.
+
+## Notebooks
+
+- [`notebooks/01_quantiles_and_freshness.ipynb`](notebooks/01_quantiles_and_freshness.ipynb): quantile forecasts
+  and the pinball loss from scratch, the plan's chain reproduced, then the two artefacts (tail under-coverage,
+  baseline reading unclosed data) isolated one at a time, and the stability clause per quantile method.
+- [`notebooks/02_real_data.ipynb`](notebooks/02_real_data.ipynb): the protocol and data checks, what the electricity
+  series look like (daily cycle, weekly cycle for a sixth of them), scores against three baselines, the
+  pre-registered verdict and the deviation, and the refit-phase fragility of `k_max` (re-run inside the notebook).
+  Reads `data/results/real_study.pkl`: run `make real` first.
+
+![Coverage of the 0.95 quantile vs cadence](figures/coverage_vs_cadence.svg)
+
+![What each competitor reads at the forecast origin](figures/baseline_leak_timeline.svg)
+
+![Scaled pinball vs cadence on real data](figures/real_pinball_vs_cadence.svg)
 
 ## Definition of done
 

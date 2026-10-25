@@ -32,3 +32,17 @@ def test_k_max_is_the_largest_cadence_below_the_baseline():
     model = {1: {0.5: 1.0}, 24: {0.5: 1.5}, 168: {0.5: 2.5}}
     assert k_max(model, {0.5: 2.0}, 0.5, (1, 24, 168)) == 24
     assert k_max(model, {0.5: 0.5}, 0.5, (1, 24, 168)) == 0
+
+
+def test_refit_phase_changes_slow_cadences_much_more_than_fast_ones():
+    from w44_retraining.realdata import gaussian_kmax_at_phase
+
+    rng = np.random.default_rng(3)
+    t = np.arange(1500)
+    y = 10 + np.sin(2 * np.pi * t / 24) + np.cumsum(rng.normal(0, 0.05, (4, 1500)), axis=1)
+    cfg = {"model": {"window_w": 120, "season_m": 24, "horizon_h": 24, "closing_lag_d": 48},
+           "span": {"history_before_evaluation": 500}, "cadences_k": [1, 24, 72]}
+    a, b = gaussian_kmax_at_phase(y, cfg, 240), gaussian_kmax_at_phase(y, cfg, 0)
+    assert abs(a["loss"][1][0.5] / b["loss"][1][0.5] - 1) < 1e-3
+    assert a["loss"][72] != b["loss"][72]
+    assert set(a["k_max"]) == {0.5, 0.8, 0.95}

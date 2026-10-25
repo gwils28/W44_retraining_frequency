@@ -33,3 +33,18 @@ def test_workers_and_cost_arithmetic():
 )
 def test_licence_gate(family, revenue, prefix):
     assert licence_gate(family, revenue).startswith(prefix)
+
+
+def test_weekly_profile_aligns_sunday_and_measures_the_weekend():
+    import numpy as np
+
+    from w44_retraining.realdata import weekend_ratio, weekly_profile
+
+    hours = np.arange(1000 + 552 + 2 * 168)
+    file_offset = 30                                    # first kept hour is hour 30 of the file
+    how = (hours + file_offset) % 168                  # hour of the week, 0 = Sunday 00:00
+    y = np.where((how < 24) | (how >= 144), 1.0, 2.0)[None, :]
+    rep = {"T_file": file_offset + hours.size, "T_kept": hours.size}
+    week = weekly_profile(y, rep, {"span": {"history_before_evaluation": 552}}, weeks=2)
+    assert week[0, :24].max() < week[0, 24:144].min()
+    assert weekend_ratio(week)[0] == pytest.approx(0.5)
