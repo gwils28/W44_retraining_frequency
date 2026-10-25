@@ -6,6 +6,18 @@ uv run w44 causal           # about 2 s
 
 Code: `src/w44_retraining/causal.py`. Tests: `tests/unit/test_causal.py`, `tests/integration/test_plan_reproduction.py`.
 
+## Notebooks
+
+- [`notebooks/01_regression_to_the_mean.ipynb`](notebooks/01_regression_to_the_mean.ipynb): the mechanism series by
+  series, the dashboard and its placebo, the threshold effect, A/B and DiD with their placebo, holdout sizing, and
+  the regression discontinuity at the trigger threshold (what it identifies, and what it does not).
+
+![A refit that does nothing still lowers the error of triggered series](figures/rtm_scatter.svg)
+
+![The stricter the trigger, the larger the fake improvement](figures/placebo_vs_threshold.svg)
+
+![The jump of the post-error at the threshold is the refit's effect](figures/rdd.svg)
+
 ## The mechanism
 
 Retraining fires when the recent error (mean over 14 steps) exceeds a threshold, and the dashboard compares the
@@ -56,7 +68,7 @@ triggered series with a pre-error in [1.05, 1.10):
 | 0.10 | -0.0638 (0.0042) | -0.0615 (0.0040) | -0.0044 (0.0045) | -0.0031 (0.0044) |
 | 0.20 | -0.0631 (0.0029) | -0.0600 (0.0029) | -0.0053 (0.0032) | -0.0028 (0.0032) |
 
-The RDD recovers the effect at the threshold and passes the placebo, at zero service cost. Its limit is what it
+The RDD recovers the effect at the threshold and passes the placebo, at zero service cost. The six placebo estimates are all slightly negative (down to -0.0053, 1.7 standard errors, at bandwidth 0.20): a small curvature bias of the local linear fit, which grows with the bandwidth; prefer the narrower bandwidths. Its limit is what it
 identifies: the effect **at the threshold** (-0.0625), not the average over the triggered series (-0.1053), because
 the effect grows with the bias and series far above the threshold carry more of it. The two designs answer
 different questions:

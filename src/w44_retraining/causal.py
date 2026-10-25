@@ -79,8 +79,15 @@ def ci_ab(d, alpha=0.05) -> tuple[float, float]:
 def est_rdd(d, thr: float, bandwidth: float) -> tuple[float, float]:
     """Sharp RDD: local linear fits of post on pre on each side of the threshold (triangular kernel), jump at thr.
     Valid when every series above the threshold is refit (the dashboard design). Returns (estimate, s.e.)."""
+    (right, var_r), (left, var_l) = rdd_lines(d, thr, bandwidth)
+    return float(right[0] - left[0]), float(np.sqrt(var_r + var_l))
+
+
+def rdd_lines(d, thr: float, bandwidth: float):
+    """Local linear fits on each side of the threshold, in x = pre - thr: ((beta_right, var_intercept_right),
+    (beta_left, var_intercept_left)), beta = (intercept, slope), HC0 sandwich variance of the intercept."""
     x, y = d["pre"] - thr, d["post"]
-    est, var = [], []
+    out = []
     for side in (x >= 0, x < 0):
         m = side & (np.abs(x) < bandwidth)
         wts = 1 - np.abs(x[m]) / bandwidth
@@ -90,9 +97,19 @@ def est_rdd(d, thr: float, bandwidth: float) -> tuple[float, float]:
         resid = y[m] - X @ beta
         bread = np.linalg.inv(X.T @ (W * X))
         meat = X.T @ ((wts**2 * resid**2)[:, None] * X)
-        est.append(beta[0])
-        var.append((bread @ meat @ bread)[0, 0])
-    return float(est[0] - est[1]), float(np.sqrt(sum(var)))
+        out.append((beta, float((bread @ meat @ bread)[0, 0])))
+    return out[0], out[1]
+
+
+def effect_by_band(delta: float, edges, n: int = 400_000, seed: int = 11, thr: float = 1.05) -> list[float]:
+    """True effect among triggered series, by band of pre-error (one randomised simulation, as in `truth`)."""
+    d = simulate(n=n, thr=thr, delta_true=delta, seed=seed, randomize=True, p_treat=0.5)
+    res = []
+    for lo, hi in zip(edges[:-1], edges[1:], strict=True):
+        keep = d["fired"] & (d["pre"] >= lo) & (d["pre"] < hi)
+        t, c = keep & d["treat"], keep & ~d["treat"]
+        res.append(float(d["post"][t].mean() - d["post"][c].mean()))
+    return res
 
 
 def study(delta: float = 0.30) -> dict:
