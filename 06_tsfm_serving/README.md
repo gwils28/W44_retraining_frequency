@@ -34,8 +34,8 @@ than 5M. If those workers are kept all month, they cost **7,862 EUR for the 209M
 consumed** by a daily refresh, a factor of 48. The bill is set by peak capacity, not by CPU-seconds, unless the
 platform scales to zero between windows.
 
-**Against the classic model of block 2.** Measured on this machine (numpy, vectorised over 2,000 series): 0.0016 ms
-per series for a refit and a forecast. At 1 EUR of decision loss per series per month, a TSFM must beat it by 0.03%
+**Against the classic model of block 2.** Measured on this machine (numpy, vectorised over 2,000 series): 0.0008 to
+0.0016 ms per series depending on the run (shared machine) for a refit and a forecast. At 1 EUR of decision loss per series per month, a TSFM must beat it by 0.03%
 (28M) or 0.13% (209M) to repay its CPU at a 6-hour cadence: compute is not the argument against a TSFM, accuracy
 and licence are.
 
@@ -46,6 +46,16 @@ and licence are.
 | Timestral (Modified MIT, 20M USD/month cap) | REFUSE | ALLOW, re-check monthly | REFUSE |
 | Chronos-2 (Apache-2.0) | ALLOW | ALLOW | ALLOW |
 | any licence not read at the source | REFUSE | REFUSE | REFUSE |
+
+## Notebook
+
+- [`notebooks/01_serving_cost.ipynb`](notebooks/01_serving_cost.ipynb): where each input comes from, CPU consumed vs
+  capacity provisioned for a batch window, the break-even accuracy gain of 209M over 123M as a function of the
+  decision loss, the measured classic-model latency, and the licence gate as a function of client revenue.
+
+![Provisioned capacity vs consumed CPU](figures/provisioned_vs_consumed.svg)
+
+![Break-even accuracy gain of 209M over 123M](figures/breakeven_209m_vs_123m.svg)
 
 ## What I correct relative to the plan
 
@@ -59,7 +69,7 @@ and licence are.
 3. **"The binding constraint is the compute window" needed its euro figure.** Worker counts and CPU-seconds are
    the same quantity unless capacity is provisioned for the peak. The point holds, and the figure that makes it is
    provisioned cost against consumed cost (x48 for the 209M at 500,000 series), which the plan does not compute.
-4. **The classic model's latency was declared (0.08 ms); measured, it is 0.0016 ms per series.** This changes no
+4. **The classic model's latency was declared (0.08 ms); measured, it is 0.0008 to 0.0016 ms per series.** This changes no
    conclusion: the TSFM's cost dominates either way.
 5. **Latency transfer is an assumption.** The published latencies are for a 2,016-step context and 96-step
    horizon. An hourly park with a 24-step horizon and a 504-step context will not have the same latency. All costs
