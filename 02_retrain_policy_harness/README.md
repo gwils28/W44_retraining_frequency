@@ -7,6 +7,21 @@ uv run w44 harness          # all tables below, about 25 s
 Code: `src/w44_retraining/{park,model,metrics,harness,harness_study}.py`. Tests: `tests/unit/test_harness.py`,
 `tests/integration/test_plan_reproduction.py` (the plan's figures, to the printed digit).
 
+## Notebooks
+
+- [`notebooks/01_the_bench.ipynb`](notebooks/01_the_bench.ipynb): the park, the served model and the closing lag
+  made visible, how a policy is scored, the plan's table, the closing-lag illusion, and why stability is two
+  incompatible clauses.
+- [`notebooks/02_the_perfect_detector.ipynb`](notebooks/02_the_perfect_detector.ipynb): why the perfect detector
+  loses (refit timing, seasonal drift switched off, one refit on a 240-hour window), the window-reset remedy,
+  paired comparisons over five seeds, and the closed-error CUSUM.
+
+![Jump size and jump frequency move in opposite directions](figures/stability_two_clauses.svg)
+
+![After a break, one refit on a 240-hour window barely moves the served level](figures/break_zoom_served_level.svg)
+
+![Paired over 5 seeds](figures/paired_seeds.svg)
+
 ## Setup
 
 A park of 120 hourly series x 2,400 steps (seed 44), served at horizon H = 24 by a window-mean + seasonal-profile

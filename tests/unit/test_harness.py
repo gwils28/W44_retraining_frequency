@@ -39,3 +39,11 @@ def test_break_reset_window_starts_at_the_last_break():
 def test_leaky_backtest_looks_better():
     park = make_park(SMALL)
     assert run(park, Calendar(k=24), fit_lag=0)["mase"] < run(park, Calendar(k=24))["mase"]
+
+
+def test_trace_records_the_served_level_at_every_origin_without_changing_results():
+    park, bench = make_park(SMALL), Bench()
+    tr: list = []
+    a = run(park, Calendar(k=24), trace=tr)
+    assert a == run(park, Calendar(k=24))
+    assert len(tr) == SMALL.T - bench.h - bench.warm(SMALL.m) and tr[0].shape == (SMALL.n,)

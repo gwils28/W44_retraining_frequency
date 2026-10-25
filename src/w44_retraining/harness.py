@@ -229,12 +229,14 @@ class Either(Policy):
 
 
 # --------------------------------------------------------------------------------------------------------------
-def run(park: Park, policy: Policy, bench: Bench = Bench(), fit_lag: int | None = None, err_lag: int = 0) -> dict:
+def run(park: Park, policy: Policy, bench: Bench = Bench(), fit_lag: int | None = None, err_lag: int = 0,
+        trace: list | None = None) -> dict:
     """Serve the park from `warm` to T - h with `policy`.
 
     fit_lag: age of the newest usable observation for a refit (default bench.d; 0 is the leak).
     err_lag: age of the newest realised error the policy may read (0 reproduces the plan; bench.d is consistent
     with the closing lag).
+    trace: if a list is given, the served level mu (n,) is appended at every origin (for plots).
     """
     y = park.y
     n, T = y.shape
@@ -260,6 +262,8 @@ def run(park: Park, policy: Policy, bench: Bench = Bench(), fit_lag: int | None 
         ctx = dict(err=err, err_time=tc, shadow_mean=shadow)
 
         f = forecast(mu, prof, t, h, m)
+        if trace is not None:
+            trace.append(mu.copy())
         abs_err += np.abs(f - y[:, t + 1 : t + h + 1]).mean(axis=1)
         count += 1
         pending[t + h] = f[:, -1].copy()
