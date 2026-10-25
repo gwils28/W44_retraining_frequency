@@ -1,4 +1,4 @@
-.PHONY: install test test-fast lint harness
+.PHONY: install test test-fast lint harness churn
 
 install:        ## create .venv and install the project + dev/notebooks groups (uv.lock)
 	uv sync
@@ -14,3 +14,6 @@ lint:
 
 harness:        ## block 2: retraining-policy bench
 	uv run w44 harness
+
+churn:          ## block 4: stability in closed form
+	uv run w44 churn
