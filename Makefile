@@ -1,4 +1,4 @@
-.PHONY: install test test-fast lint harness gate churn freshness real serving causal
+.PHONY: install test test-fast lint harness gate churn freshness real serving causal notebooks lab
 
 install:        ## create .venv and install the project + dev/notebooks groups (uv.lock)
 	uv sync
@@ -33,3 +33,11 @@ serving:        ## block 6: TSFM size by serving cost, licence gate
 
 causal:         ## block 8: retraining as an intervention
 	uv run w44 causal
+
+notebooks:      ## re-execute every notebook in place (block 5 real data reads data/results/, run `make real` first)
+	for nb in 0*/notebooks/*.ipynb; do \
+		uv run jupyter nbconvert --to notebook --execute --inplace "$$nb" || exit 1; \
+	done
+
+lab:            ## open JupyterLab at the root
+	uv run jupyter lab

@@ -32,7 +32,7 @@ def main(argv: list[str] | None = None) -> None:
         if args.action == "download":
             print(realdata.download())
         else:
-            realdata.print_study(realdata.study())
+            realdata.print_study(realdata.study_cached(refresh=True))
     elif args.cmd == "gate":
         from .gate import run
 

@@ -20,6 +20,7 @@ from .freshness import TAUS, closed_lag, k_max, seasonal_naive, serve_quantiles,
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "configs" / "freshness_real.yaml"
 RAW = ROOT / "data" / "raw"
+RESULTS = ROOT / "data" / "results" / "real_study.pkl"
 
 
 class DataCheckError(ValueError):
@@ -212,3 +213,15 @@ def print_study(out: dict) -> None:
     print("\nclosing-lag illusion at tau = 0.95")
     for (method, k), (r, lk, ill) in out["illusion"].items():
         print(f"   {method:>9s} k={k:>3d}: {r:.4f} vs {lk:.4f} -> {ill:+.1%}")
+
+
+def study_cached(refresh: bool = False) -> dict:
+    """The study, cached in data/results/ (gitignored; regenerable with `w44 real run`). Notebooks read this."""
+    import pickle
+
+    if RESULTS.exists() and not refresh:
+        return pickle.loads(RESULTS.read_bytes())
+    out = study()
+    RESULTS.parent.mkdir(parents=True, exist_ok=True)
+    RESULTS.write_bytes(pickle.dumps(out))
+    return out
